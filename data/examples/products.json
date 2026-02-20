@@ -1,0 +1,72 @@
+[
+  {
+    "name": "MacBook Pro 16-inch",
+    "description": "Powerful laptop for professionals with M3 Pro chip, 16GB RAM, 512GB SSD",
+    "category": "Electronics",
+    "subcategory": "Laptops",
+    "price": 2499.99,
+    "currency": "USD",
+    "stock_quantity": 10,
+    "attributes": {
+      "brand": "Apple",
+      "processor": "M3 Pro",
+      "ram": "16GB",
+      "storage": "512GB SSD",
+      "screen_size": "16 inch"
+    },
+    "tags": ["laptop", "apple", "professional", "programming"],
+    "image_urls": ["https://example.com/macbook.jpg"]
+  },
+  {
+    "name": "Dell XPS 15",
+    "description": "High-performance Windows laptop with Intel i7 processor, NVIDIA RTX graphics",
+    "category": "Electronics",
+    "subcategory": "Laptops",
+    "price": 1799.99,
+    "currency": "USD",
+    "stock_quantity": 8,
+    "attributes": {
+      "brand": "Dell",
+      "processor": "Intel i7",
+      "ram": "16GB",
+      "graphics": "NVIDIA RTX 3050"
+    },
+    "tags": ["laptop", "dell", "windows", "gaming"],
+    "image_urls": ["https://example.com/dell.jpg"]
+  },
+  {
+    "name": "iPhone 15 Pro",
+    "description": "Latest iPhone with A17 Pro chip, 256GB storage, titanium design",
+    "category": "Electronics",
+    "subcategory": "Smartphones",
+    "price": 1199.99,
+    "currency": "USD",
+    "stock_quantity": 25,
+    "attributes": {
+      "brand": "Apple",
+      "storage": "256GB",
+      "color": "Titanium Blue",
+      "camera": "48MP"
+    },
+    "tags": ["phone", "iphone", "smartphone", "camera"],
+    "image_urls": ["https://example.com/iphone.jpg"]
+  },
+  {
+    "name": "Sony WH-1000XM5",
+    "description": "Premium noise-cancelling wireless headphones with exceptional sound quality",
+    "category": "Electronics",
+    "subcategory": "Audio",
+    "price": 399.99,
+    "currency": "USD",
+    "stock_quantity": 30,
+    "attributes": {
+      "brand": "Sony",
+      "type": "Over-ear",
+      "noise_cancelling": true,
+      "battery": "30 hours"
+    },
+    "tags": ["headphones", "sony", "noise-cancelling", "wireless"],
+    "image_urls": ["https://example.com/sony.jpg"]
+  }
+]
+

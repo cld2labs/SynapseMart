@@ -1,0 +1,10 @@
+name,description,category,subcategory,price,currency,stock_quantity,brand,tags,image_urls
+MacBook Pro 16-inch,Powerful laptop for professionals with M3 Pro chip,Electronics,Laptops,2499.99,USD,10,Apple,"laptop,apple,professional,programming","https://example.com/macbook.jpg"
+Dell XPS 15,High-performance Windows laptop with Intel i7,Electronics,Laptops,1799.99,USD,8,Dell,"laptop,dell,windows,gaming","https://example.com/dell.jpg"
+iPhone 15 Pro,Latest iPhone with A17 Pro chip and titanium design,Electronics,Smartphones,1199.99,USD,25,Apple,"phone,iphone,smartphone,camera","https://example.com/iphone.jpg"
+Sony WH-1000XM5,Premium noise-cancelling wireless headphones,Electronics,Audio,399.99,USD,30,Sony,"headphones,audio,wireless,noise-cancelling","https://example.com/sony.jpg"
+AirPods Pro,Apple's premium wireless earbuds with spatial audio,Electronics,Audio,249.99,USD,45,Apple,"earbuds,apple,wireless,airpods","https://example.com/airpods.jpg"
+Nike Air Max 90,Classic running shoes with Air Max cushioning,Fashion,Footwear,120.00,USD,50,Nike,"shoes,nike,running,sneakers","https://example.com/nike.jpg"
+Levi's 501,Classic straight-fit jeans with timeless style,Fashion,Clothing,89.00,USD,60,Levi's,"jeans,levis,denim,casual","https://example.com/levis.jpg"
+Dyson V15 Detect,Cordless vacuum with laser dust detection,Home & Kitchen,Cleaning,749.99,USD,20,Dyson,"vacuum,dyson,cordless,cleaning","https://example.com/dyson.jpg"
+

@@ -1,0 +1,68 @@
+services:
+  # 1. Product Service - Manages Catalog & DB
+  product-service:
+    build:
+      context: ./services/product
+    container_name: synapse-product
+    environment:
+      - SEARCH_SERVICE_URL=http://search-service:8002
+    volumes:
+      - product-data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - synapse-net
+    restart: always
+
+  # 2. Search Service - Hybrid Search & NLP
+  search-service:
+    build:
+      context: ./services/search
+    container_name: synapse-search
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:8001
+      - SENTENCE_TRANSFORMERS_HOME=/app/model_cache
+    volumes:
+      - ./.model_cache:/app/model_cache
+      - ./logs:/app/logs
+    networks:
+      - synapse-net
+    restart: always
+
+  # 3. Gateway - API Routing & Proxy
+  gateway:
+    build:
+      context: ./gateway
+    container_name: synapse-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:8001
+      - SEARCH_SERVICE_URL=http://search-service:8002
+    depends_on:
+      - product-service
+      - search-service
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - synapse-net
+    restart: always
+
+  # 4. UI - Frontend Application
+  ui:
+    build:
+      context: ./ui
+    container_name: synapse-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+    networks:
+      - synapse-net
+    restart: always
+
+networks:
+  synapse-net:
+    driver: bridge
+
+volumes:
+  product-data:

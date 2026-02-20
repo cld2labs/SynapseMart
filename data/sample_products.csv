@@ -1,0 +1,7 @@
+name,description,category,price,currency,stock_quantity,seller_name,image_url
+Test Phone,A great smartphone,Electronics,500,USD,10,SellerA,
+Action Figure,Cool toy for boys,Toys & Games,15,USD,50,ToyStore,
+Panda Plush,Soft toy for kids,Toys & Games,25,USD,30,ToyStore,
+Gaming Laptop,High performance laptop,Electronics,1200,USD,5,TechShop,
+Office Chair,Ergonomic chair,Furniture,150,USD,10,HomeOffice,
+Coffee Mug,White ceramic mug,Home & Kitchen,10,USD,100,KitchenCo,
