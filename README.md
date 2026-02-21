@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="ui/public/cloud2labs-logo.png" width="800" alt="SynapseMart Header">
+  <img src="docs/assets/InnovationHub-HeaderImage.png" width="800" alt="SynapseMart Header">
 </p>
 
 # 🛒 SynapseMart - AI-Powered Hybrid Marketplace Search
