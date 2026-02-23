@@ -7,6 +7,14 @@ RUN pip install --no-cache-dir --default-timeout=100 -r requirements.txt
 
 COPY . .
 
+RUN addgroup --system appgroup \
+    && adduser --system --ingroup appgroup appuser \
+    && mkdir -p /app/logs \
+    && chmod -R 775 /app \
+    && chown -R appuser:appgroup /app
+
 EXPOSE 8000
+
+USER appuser
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
