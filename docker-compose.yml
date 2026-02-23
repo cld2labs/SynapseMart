@@ -53,7 +53,7 @@ services:
       context: ./ui
     container_name: synapse-ui
     ports:
-      - "80:80"
+      - "80:8080"
     depends_on:
       - gateway
     networks:
