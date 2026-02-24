@@ -1,7 +1,7 @@
 # Contributing to  FinSights 
 
 Thank you for your interest in contributing to the
-**Audify** by Cloud2 Labs.
+**SynapseMart** by Cloud2 Labs.
 
 ## Scope of Contributions
 Appropriate contributions include:
