@@ -1,22 +1,21 @@
-# Contributing to  FinSights 
+# Contributing to SynapseMart
 
-Thank you for your interest in contributing to the
-**SynapseMart** by Cloud2 Labs.
+Thank you for your interest in contributing to **SynapseMart**.
 
 ## Scope of Contributions
 Appropriate contributions include:
 - Documentation improvements
-- Bug fixes
-- Reference architecture enhancements
-- Educational clarity and examples
+- Bug fixes and test coverage updates
+- Search quality, ingestion, and API enhancements
+- UI/UX improvements aligned with the current architecture
 
-Major feature additions or architectural changes require prior discussion with
-the Cloud2 Labs maintainers.
+Major feature additions or architectural changes should be discussed with
+repository maintainers before implementation.
 
 ## Contribution Guidelines
-- Follow existing coding and documentation standards
-- Avoid production-specific assumptions
-- Do not introduce sensitive, proprietary, or regulated data
+- Follow existing coding, testing, and documentation patterns
+- Keep changes consistent with the microservices + gateway architecture
+- Do not commit secrets, private keys, or proprietary datasets
 
 By submitting a contribution, you agree that your work may be used, modified,
 and redistributed by Cloud2 Labs.

@@ -1,14 +1,14 @@
-# Security Policy 
+# Security Policy
 
-The **SynapseMart** does not include
-production-grade security controls.
+The **SynapseMart** repository is intended for development and learning and
+does not include complete production-grade security controls by default.
 
-This repository is not secure by default and must not be used in production
-without a comprehensive security review.
+Do not deploy this project to production without a full security review and
+hardening process.
 
 Users are responsible for implementing appropriate:
 - Authentication and authorization mechanisms
-- Encryption and secure data storage
-- Monitoring, logging, and auditing
-- Regulatory and compliance safeguards
+- Encryption for data in transit and at rest
+- Monitoring, logging, alerting, and auditing
+- Dependency, container, and infrastructure vulnerability management
 
