@@ -4,8 +4,8 @@ services:
     build:
       context: ./services/product
     container_name: synapse-product
-    environment:
-      - SEARCH_SERVICE_URL=http://search-service:8002
+    env_file:
+      - ./.env
     volumes:
       - product-data:/app/data
       - ./logs:/app/logs
@@ -18,8 +18,9 @@ services:
     build:
       context: ./services/search
     container_name: synapse-search
+    env_file:
+      - ./.env
     environment:
-      - PRODUCT_SERVICE_URL=http://product-service:8001
       - SENTENCE_TRANSFORMERS_HOME=/app/model_cache
     volumes:
       - ./.model_cache:/app/model_cache
@@ -35,9 +36,8 @@ services:
     container_name: synapse-gateway
     ports:
       - "8000:8000"
-    environment:
-      - PRODUCT_SERVICE_URL=http://product-service:8001
-      - SEARCH_SERVICE_URL=http://search-service:8002
+    env_file:
+      - ./.env
     depends_on:
       - product-service
       - search-service

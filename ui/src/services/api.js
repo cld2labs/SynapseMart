@@ -18,6 +18,12 @@ export const uploadCSV = async (file) => {
   return response.json();
 };
 
+export const getUploadJobStatus = async (jobId) => {
+  const response = await fetch(`${API_URL}/api/upload-jobs/${jobId}`);
+  if (!response.ok) throw new Error('Failed to fetch upload job status');
+  return response.json();
+};
+
 export const getProducts = async (filters = {}) => {
   const params = new URLSearchParams(filters);
   const response = await fetch(`${API_URL}/api/products?${params}`);

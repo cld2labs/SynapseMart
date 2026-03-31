@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search as SearchIcon } from 'lucide-react';
-import { searchProducts, getProducts, getCategories } from '../services/api';
+import { Loader2, Search as SearchIcon } from 'lucide-react';
+import { searchProducts, getProducts, getCategories, getUploadJobStatus } from '../services/api';
 import ProductList from '../components/ProductList';
 
 export const Search = () => {
@@ -11,20 +11,75 @@ export const Search = () => {
   const [categories, setCategories] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(true);
+  const [jobStatus, setJobStatus] = useState(null);
+
+  const loadProducts = async (category = '') => {
+    const filters = { limit: 100 };
+    if (category) {
+      filters.category = category;
+    }
+
+    const data = await getProducts(filters);
+    setResults(data || []);
+  };
 
   useEffect(() => {
     loadCategories();
-
-    // Auto-search if params exist
     const initialQuery = searchParams.get('q');
     const initialCategory = searchParams.get('category');
+    const currentJobId = searchParams.get('job');
 
-    if (initialQuery || initialCategory) {
-      setQuery(initialQuery || '');
-      setSelectedCategory(initialCategory || '');
-      performSearch(initialQuery, initialCategory);
+    setQuery(initialQuery || '');
+    setSelectedCategory(initialCategory || '');
+    performSearch(initialQuery, initialCategory);
+    setJobStatus(currentJobId ? { job_id: currentJobId, status: 'queued', processed_products: 0, total_products: 0 } : null);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const jobId = searchParams.get('job');
+    if (!jobId) {
+      setJobStatus(null);
+      return undefined;
     }
+
+    let cancelled = false;
+
+    const fetchStatus = async () => {
+      try {
+        const nextStatus = await getUploadJobStatus(jobId);
+        if (!cancelled) {
+          setJobStatus(nextStatus);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to fetch upload job status:', error);
+        }
+      }
+    };
+
+    fetchStatus();
+
+    const intervalId = window.setInterval(async () => {
+      const nextStatus = await getUploadJobStatus(jobId).catch((error) => {
+        console.error('Failed to fetch upload job status:', error);
+        return null;
+      });
+
+      if (!nextStatus || cancelled) {
+        return;
+      }
+
+      setJobStatus(nextStatus);
+      if (nextStatus.status === 'completed' || nextStatus.status === 'completed_with_errors') {
+        window.clearInterval(intervalId);
+      }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
   }, [searchParams]);
 
   const loadCategories = async () => {
@@ -37,21 +92,17 @@ export const Search = () => {
   };
 
   const performSearch = async (searchQ, searchCat) => {
-    if (!searchQ && !searchCat) return;
-
     setLoading(true);
     setSearched(true);
     try {
-      let data;
       if (searchQ) {
-        data = await searchProducts(searchQ);
+        const data = await searchProducts(searchQ);
         if (searchCat) {
           data.results = data.results.filter(p => p.category === searchCat);
         }
         setResults(data.results || []);
-      } else if (searchCat) {
-        data = await getProducts({ category: searchCat, limit: 100 });
-        setResults(data || []);
+      } else {
+        await loadProducts(searchCat || '');
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -66,20 +117,64 @@ export const Search = () => {
     const params = {};
     if (query.trim()) params.q = query.trim();
     if (selectedCategory) params.category = selectedCategory;
+    const jobId = searchParams.get('job');
+    if (jobId) params.job = jobId;
     setSearchParams(params);
   };
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
-    // Update params to trigger search via useEffect
     const params = {};
     if (query.trim()) params.q = query.trim();
     if (category) params.category = category;
+    const jobId = searchParams.get('job');
+    if (jobId) params.job = jobId;
     setSearchParams(params);
   };
 
+  const progressPercent = jobStatus?.total_products
+    ? Math.min(100, Math.round((jobStatus.processed_products / jobStatus.total_products) * 100))
+    : 0;
+
   return (
     <div className="space-y-8">
+      {jobStatus && (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">Upload Processing</p>
+              <h2 className="mt-2 text-2xl font-bold text-gray-900">Products are searchable now. Enrichment is still running.</h2>
+              <p className="mt-2 text-gray-600">
+                Processed {jobStatus.processed_products} of {jobStatus.total_products} products.
+              </p>
+              {(jobStatus.status === 'completed' || jobStatus.status === 'completed_with_errors') && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Background enrichment has finished. Search results now reflect the latest indexed product text.
+                </p>
+              )}
+            </div>
+            {jobStatus.status !== 'completed' && jobStatus.status !== 'completed_with_errors' && (
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+            )}
+          </div>
+
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600">
+            <span>Status: <strong className="text-gray-900">{jobStatus.status}</strong></span>
+            <span>Completed batches: <strong className="text-gray-900">{jobStatus.completed_batches}</strong></span>
+            {jobStatus.failed_batches > 0 && (
+              <span>Failed batches: <strong className="text-red-600">{jobStatus.failed_batches}</strong></span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
         <form onSubmit={handleSearch} className="space-y-6">
           <div className="flex gap-4">

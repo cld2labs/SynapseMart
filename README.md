@@ -41,6 +41,7 @@ Microservices-based marketplace platform for product ingestion, catalog manageme
 2. **Index Building**: After product changes, the Product Service triggers the Search Service indexing endpoint to rebuild semantic and keyword indices.
 3. **Natural Language Query Parsing**: Search queries are parsed for category, price bounds, and sort intent using spaCy + rule-based logic.
 4. **Hybrid Retrieval and Ranking**: The Search Service combines FAISS semantic similarity with BM25 keyword matching, applies dynamic weighting, and returns ranked results through the gateway.
+5. **LLM Enrichment**: The Product Service generate a concise short description during ingestion through an OpenAI-compatible chat API, with deterministic fallback if the model call is disabled or unavailable.
 
 The codebase is implemented with FastAPI services, a React + Vite frontend, and Docker Compose orchestration. It supports background indexing, category-aware boosting, and filtered/sorted query responses.
 
@@ -143,7 +144,41 @@ git clone <your-repo-url>
 cd syanapseMart
 ```
 
-#### 2. Launch the Full Stack
+#### 2. Create Your Environment File
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your preferred model endpoint. For OpenAI:
+
+```dotenv
+LLM_ENRICHMENT_ENABLED=true
+LLM_ENRICHMENT_MODEL=gpt-4o-mini
+LLM_ENRICHMENT_BASE_URL=https://api.openai.com/v1
+LLM_ENRICHMENT_API_KEY=your_api_key
+LLM_ENRICHMENT_BATCH_SIZE=8
+LLM_ENRICHMENT_MAX_BATCH_CHARS=6000
+BACKGROUND_ENRICHMENT_JOB_SIZE=4
+```
+
+For a local Ollama server with an OpenAI-compatible API:
+
+```dotenv
+LLM_ENRICHMENT_ENABLED=true
+LLM_ENRICHMENT_MODEL=llama3.2
+LLM_ENRICHMENT_BASE_URL=http://host.docker.internal:11434/v1
+LLM_ENRICHMENT_API_KEY=ollama
+LLM_ENRICHMENT_BATCH_SIZE=4
+LLM_ENRICHMENT_MAX_BATCH_CHARS=3000
+BACKGROUND_ENRICHMENT_JOB_SIZE=4
+QUERY_PARSER_LLM_ENABLED=true
+QUERY_PARSER_LLM_MODEL=llama3.2
+QUERY_PARSER_LLM_BASE_URL=http://host.docker.internal:11434/v1
+QUERY_PARSER_LLM_API_KEY=ollama
+```
+
+#### 3. Launch the Full Stack
 
 ```bash
 docker compose up --build -d
@@ -155,14 +190,14 @@ For live logs:
 docker compose up --build
 ```
 
-#### 3. Access the Application
+#### 4. Access the Application
 
-- **Frontend UI**: http://localhost
+- **Frontend UI**: http://localhost:80
 - **Gateway API**: http://localhost:8000
 - **Product Service Docs**: http://localhost:8001/docs
 - **Search Service Docs**: http://localhost:8002/docs
 
-#### 4. Verify Services
+#### 5. Verify Services
 
 ```bash
 # Gateway health
@@ -176,7 +211,7 @@ curl "http://localhost:8000/api/search?q=laptop"
 docker compose ps
 ```
 
-#### 5. Stop the Application
+#### 6. Stop the Application
 
 ```bash
 docker compose down
@@ -277,7 +312,7 @@ syanapseMart/
 
 ## Environment Variables
 
-SynapseMart works out of the box with defaults, but these env vars can be configured:
+Create a root `.env` from `.env.example` and keep service configuration there.
 
 | Variable | Service | Description | Default |
 |----------|---------|-------------|---------|
@@ -285,6 +320,19 @@ SynapseMart works out of the box with defaults, but these env vars can be config
 | `SEARCH_SERVICE_URL` | Gateway | Internal URL used by gateway for search calls | `http://search-service:8002` |
 | `SEARCH_SERVICE_URL` | Product | URL used by product service to trigger indexing | `http://search-service:8002` |
 | `PRODUCT_SERVICE_URL` | Search | URL used by search service for lazy category loading | `http://product-service:8001` |
+| `LLM_ENRICHMENT_ENABLED` | Product | Enables upload-time LLM enrichment | `false` |
+| `LLM_ENRICHMENT_MODEL` | Product | OpenAI-compatible chat model name | `gpt-4o-mini` |
+| `LLM_ENRICHMENT_BASE_URL` | Product | Base URL for OpenAI-compatible `/v1` endpoint | `https://api.openai.com/v1` |
+| `LLM_ENRICHMENT_API_KEY` | Product | API key or local placeholder token | empty |
+| `LLM_ENRICHMENT_TIMEOUT` | Product | Timeout for enrichment calls in seconds | `20` |
+| `LLM_ENRICHMENT_BATCH_SIZE` | Product | Max products per LLM enrichment request | `8` |
+| `LLM_ENRICHMENT_MAX_BATCH_CHARS` | Product | Max serialized payload size per enrichment request | `6000` |
+| `BACKGROUND_ENRICHMENT_JOB_SIZE` | Product | Number of products processed per background job batch | `4` |
+| `QUERY_PARSER_LLM_ENABLED` | Search | Enables LLM-based natural language query parsing | `false` |
+| `QUERY_PARSER_LLM_MODEL` | Search | OpenAI-compatible query parser model | `gpt-4o-mini` |
+| `QUERY_PARSER_LLM_BASE_URL` | Search | Base URL for the parser model endpoint | empty |
+| `QUERY_PARSER_LLM_API_KEY` | Search | API key or local placeholder token | empty |
+| `QUERY_PARSER_LLM_TIMEOUT` | Search | Timeout for query parser calls in seconds | `15` |
 | `SENTENCE_TRANSFORMERS_HOME` | Search | Cache directory for transformer model files | `/app/model_cache` |
 | `VITE_API_URL` | UI (dev) | Frontend API base URL during local `vite` runs | `http://localhost:8000` |
 
@@ -372,4 +420,3 @@ This project is licensed under the [MIT License](LICENSE).
 - Search ranking quality depends on uploaded data quality and query phrasing.
 - NLP interpretation of price/category/sort intent may not be perfect for every query.
 - Validate outputs before using this system in production workflows.
-

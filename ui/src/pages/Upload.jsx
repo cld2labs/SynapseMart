@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Upload as UploadIcon, FileSpreadsheet, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Upload as UploadIcon, FileSpreadsheet } from 'lucide-react';
 import { uploadCSV } from '../services/api';
 import toast from 'react-hot-toast';
 
 export const Upload = () => {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState(null);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
-    setResult(null);
   };
 
   const handleUpload = async () => {
@@ -22,9 +22,9 @@ export const Upload = () => {
     setUploading(true);
     try {
       const data = await uploadCSV(file);
-      setResult(data);
-      toast.success(`Uploaded ${data.count} products!`);
-      setFile(null);
+      const jobId = data.job?.job_id;
+      toast.success(`Accepted ${data.count} products for background processing`);
+      navigate(jobId ? `/search?job=${encodeURIComponent(jobId)}` : '/search');
     } catch (error) {
       toast.error('Upload failed: ' + error.message);
     } finally {
@@ -76,14 +76,6 @@ export const Upload = () => {
           </button>
         )}
 
-        {result && (
-          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-green-700">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">{result.message}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="bg-blue-50 rounded-lg p-6">

@@ -49,6 +49,16 @@ async def upload_proxy(request: Request):
         logger.error(f"Upload proxy error: {e}")
         raise HTTPException(status_code=503, detail="Upload service unavailable")
 
+@router.get("/upload-jobs/{job_id}")
+async def upload_job_proxy(job_id: str):
+    """Fetch background upload job status."""
+    try:
+        resp = await client.get(f"{PRODUCT_SERVICE_URL}/products/jobs/{job_id}", timeout=15.0)
+        return resp.json()
+    except Exception as e:
+        logger.error(f"Upload job proxy error: {e}")
+        raise HTTPException(status_code=503, detail="Upload job service unavailable")
+
 @router.get("/search")
 async def search_proxy(request: Request):
     """Proxy to Search Service."""
