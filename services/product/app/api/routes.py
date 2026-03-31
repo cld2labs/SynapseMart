@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..core.database import get_db
 from ..models.product import Product
-from ..services.catalog import process_csv_upload, trigger_indexing
+from ..services.catalog import load_all_products_data, process_csv_upload, reindex_catalog, run_upload_job, start_upload_job
+from ..services.jobs import upload_job_store
 
 router = APIRouter()
 
@@ -15,29 +16,23 @@ async def upload_products(
 ):
     """Handle product CSV uploads."""
     try:
-        added_count, skipped_count = process_csv_upload(file, db)
-        
-        # Prepare data for search indexing
-        all_products = db.query(Product).all()
-        products_data = [{
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "category": p.category,
-            "price": p.price,
-            "currency": p.currency,
-            "stock_quantity": p.stock_quantity,
-            "seller_name": p.seller_name,
-            "image_url": p.image_url
-        } for p in all_products]
-        
-        background_tasks.add_task(trigger_indexing, products_data)
-        
+        upload_result = process_csv_upload(file, db)
+        all_products_data = load_all_products_data(db)
+        background_tasks.add_task(reindex_catalog)
+
+        job = start_upload_job(upload_result["product_ids"])
+        if job:
+            background_tasks.add_task(run_upload_job, job["job_id"], upload_result["product_ids"])
+
         return {
-            "message": f"Processed {added_count} products",
-            "count": added_count,
-            "skipped": skipped_count,
-            "total_products": len(all_products)
+            "message": (
+                f"Accepted {upload_result['added_count']} products for upload. "
+                "Search is available immediately; enrichment continues in the background."
+            ),
+            "count": upload_result["added_count"],
+            "skipped": upload_result["skipped_count"],
+            "total_products": len(all_products_data),
+            "job": job,
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -66,5 +61,13 @@ def clear_catalog(background_tasks: BackgroundTasks, db: Session = Depends(get_d
     """Wipe the product catalog."""
     count = db.query(Product).delete()
     db.commit()
-    background_tasks.add_task(trigger_indexing, [])
+    background_tasks.add_task(reindex_catalog)
     return {"message": f"Deleted {count} products"}
+
+
+@router.get("/jobs/{job_id}")
+def get_upload_job(job_id: str):
+    job = upload_job_store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Upload job not found")
+    return job

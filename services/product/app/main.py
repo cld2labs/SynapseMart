@@ -7,11 +7,12 @@ logging.basicConfig(
 )
 
 from fastapi import FastAPI
-from .core.database import engine, Base
+from .core.database import engine, Base, ensure_schema
 from .api.routes import router
 
 # Initialize Database
 Base.metadata.create_all(bind=engine)
+ensure_schema()
 
 app = FastAPI(title="SynapseMart Product Service")
 

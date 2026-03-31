@@ -7,6 +7,8 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(String)
+    short_description = Column(String)
+    search_text = Column(String)
     category = Column(String, index=True)
     price = Column(Float)
     currency = Column(String, default="USD")
