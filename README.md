@@ -38,10 +38,10 @@ Microservices-based marketplace platform for product ingestion, catalog manageme
 ### How It Works
 
 1. **Upload and Cataloging**: Users upload product CSV files via the UI; the gateway forwards files to the Product Service for validation, deduplication, and SQLite persistence.
-2. **Index Building**: After product changes, the Product Service triggers the Search Service indexing endpoint to rebuild semantic and keyword indices.
-3. **Natural Language Query Parsing**: Search queries are parsed for category, price bounds, and sort intent using spaCy + rule-based logic.
-4. **Hybrid Retrieval and Ranking**: The Search Service combines FAISS semantic similarity with BM25 keyword matching, applies dynamic weighting, and returns ranked results through the gateway.
-5. **LLM Enrichment**: The Product Service generate a concise short description during ingestion through an OpenAI-compatible chat API, with deterministic fallback if the model call is disabled or unavailable.
+2. **LLM Enrichment**: When `LLM_ENRICHMENT_ENABLED=true`, the Product Service generates concise short descriptions and enriched search text through an OpenAI-compatible chat API before the final enriched index update.
+3. **Index Building**: After product changes, the Product Service triggers the Search Service indexing endpoint to rebuild semantic and keyword indices.
+4. **Natural Language Query Parsing**: Search queries are parsed for category, price bounds, and sort intent using spaCy + rule-based logic.
+5. **Hybrid Retrieval and Ranking**: The Search Service combines FAISS semantic similarity with BM25 keyword matching, applies dynamic weighting, and returns ranked results through the gateway.
 
 The codebase is implemented with FastAPI services, a React + Vite frontend, and Docker Compose orchestration. It supports background indexing, category-aware boosting, and filtered/sorted query responses.
 
@@ -108,12 +108,21 @@ graph LR
 **Product Service**
 - Handles CSV uploads and product deduplication.
 - Stores products in SQLite and serves catalog/category/list APIs.
+- Optionally enriches uploaded products with LLM-generated short descriptions and search text.
 - Triggers async index rebuilds on the Search Service after catalog updates.
 
 **Search Service**
 - Parses user queries with spaCy and regex rules for filters/sort intent.
 - Uses `SentenceTransformer(all-MiniLM-L6-v2)` + FAISS for semantic retrieval.
 - Uses BM25 for lexical relevance and merges both via reciprocal-rank fusion.
+
+### Data Ingestion Pipeline
+
+1. UI uploads a CSV file through the gateway.
+2. Product Service parses rows with Pandas, validates fields, removes duplicates, and stores the catalog in SQLite.
+3. Product Service generates deterministic fallback `short_description` and `search_text` fields immediately.
+4. If `LLM_ENRICHMENT_ENABLED=true`, Product Service runs background LLM enrichment to improve `short_description` quality and refresh `search_text`.
+5. Product Service triggers Search Service indexing so FAISS and BM25 reflect the latest catalog data.
 
 ---
 
@@ -409,7 +418,7 @@ docker compose logs -f gateway product-service search-service ui
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under our [LICENSE](./LICENSE.md) file for details.
 
 ---
 
@@ -420,3 +429,5 @@ This project is licensed under the [MIT License](LICENSE).
 - Search ranking quality depends on uploaded data quality and query phrasing.
 - NLP interpretation of price/category/sort intent may not be perfect for every query.
 - Validate outputs before using this system in production workflows.
+
+For full disclaimer details, see [DISCLAIMER.md](./DISCLAIMER.md)

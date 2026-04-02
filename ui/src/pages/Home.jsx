@@ -58,9 +58,6 @@ export const Home = () => {
             >
               Start Shopping
             </button>
-            <button className="px-8 py-4 rounded-2xl font-bold text-white border-2 border-white/30 hover:bg-white/10 hover:border-white/50 transition-all duration-300 backdrop-blur-sm">
-              Sell on SynapseMart
-            </button>
           </div>
         </div>
       </div>

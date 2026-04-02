@@ -6,7 +6,7 @@ import shutil
 from typing import Dict, List
 from sqlalchemy.orm import Session
 from ..models.product import Product
-from ..core.config import BACKGROUND_ENRICHMENT_JOB_SIZE, SEARCH_SERVICE_URL
+from ..core.config import BACKGROUND_ENRICHMENT_JOB_SIZE, LLM_ENRICHMENT_ENABLED, SEARCH_SERVICE_URL
 from ..core.database import SessionLocal
 from .enrichment import build_search_text, build_short_description
 from .llm_enrichment import llm_enricher
@@ -211,7 +211,7 @@ def enrich_products_batch(product_ids: List[int]) -> List[Dict[str, object]]:
 
 
 def start_upload_job(product_ids: List[int]) -> Dict[str, object] | None:
-    if not product_ids:
+    if not product_ids or not LLM_ENRICHMENT_ENABLED:
         return None
     return upload_job_store.create(
         total_products=len(product_ids),

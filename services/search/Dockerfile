@@ -10,7 +10,7 @@ COPY . .
 
 RUN addgroup --system appgroup \
     && adduser --system --ingroup appgroup appuser \
-    && mkdir -p /app/model_cache /app/logs \
+    && mkdir -p /app/model_cache /app/logs /app/.cache/huggingface/hub /app/.cache/huggingface/transformers \
     && chmod -R 775 /app \
     && chown -R appuser:appgroup /app
 
