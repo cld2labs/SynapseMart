@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from ..core.config import LLM_ENRICHMENT_ENABLED
 from ..core.database import get_db
 from ..models.product import Product
 from ..services.catalog import load_all_products_data, process_csv_upload, reindex_catalog, run_upload_job, start_upload_job
@@ -24,15 +25,27 @@ async def upload_products(
         if job:
             background_tasks.add_task(run_upload_job, job["job_id"], upload_result["product_ids"])
 
+        requires_enrichment_completion = bool(LLM_ENRICHMENT_ENABLED and job)
+
         return {
             "message": (
-                f"Accepted {upload_result['added_count']} products for upload. "
-                "Search is available immediately; enrichment continues in the background."
+                (
+                    f"Accepted {upload_result['added_count']} products for upload. "
+                    "Search will unlock after LLM enrichment completes."
+                )
+                if requires_enrichment_completion
+                else (
+                    f"Accepted {upload_result['added_count']} products for upload. "
+                    "Search is available immediately."
+                )
             ),
             "count": upload_result["added_count"],
             "skipped": upload_result["skipped_count"],
             "total_products": len(all_products_data),
             "job": job,
+            "llm_enrichment_enabled": LLM_ENRICHMENT_ENABLED,
+            "requires_enrichment_completion": requires_enrichment_completion,
+            "search_ready": not requires_enrichment_completion,
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -21,6 +21,11 @@ services:
     env_file:
       - ./.env
     environment:
+      - HOME=/app
+      - XDG_CACHE_HOME=/app/.cache
+      - HF_HOME=/app/.cache/huggingface
+      - HUGGINGFACE_HUB_CACHE=/app/.cache/huggingface/hub
+      - TRANSFORMERS_CACHE=/app/.cache/huggingface/transformers
       - SENTENCE_TRANSFORMERS_HOME=/app/model_cache
     volumes:
       - ./.model_cache:/app/model_cache

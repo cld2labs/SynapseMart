@@ -24,6 +24,8 @@ Microservices-based marketplace platform for product ingestion, catalog manageme
 - [Project Structure](#project-structure)
 - [Usage Guide](#usage-guide)
 - [Environment Variables](#environment-variables)
+- [Inference Benchmarks](#inference-benchmarks)
+- [Model Capabilities](#model-capabilities)
 - [Technology Stack](#technology-stack)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -38,10 +40,10 @@ Microservices-based marketplace platform for product ingestion, catalog manageme
 ### How It Works
 
 1. **Upload and Cataloging**: Users upload product CSV files via the UI; the gateway forwards files to the Product Service for validation, deduplication, and SQLite persistence.
-2. **Index Building**: After product changes, the Product Service triggers the Search Service indexing endpoint to rebuild semantic and keyword indices.
-3. **Natural Language Query Parsing**: Search queries are parsed for category, price bounds, and sort intent using spaCy + rule-based logic.
-4. **Hybrid Retrieval and Ranking**: The Search Service combines FAISS semantic similarity with BM25 keyword matching, applies dynamic weighting, and returns ranked results through the gateway.
-5. **LLM Enrichment**: The Product Service generate a concise short description during ingestion through an OpenAI-compatible chat API, with deterministic fallback if the model call is disabled or unavailable.
+2. **LLM Enrichment**: When `LLM_ENRICHMENT_ENABLED=true`, the Product Service generates concise short descriptions and enriched search text through an OpenAI-compatible chat API before the final enriched index update.
+3. **Index Building**: After product changes, the Product Service triggers the Search Service indexing endpoint to rebuild semantic and keyword indices.
+4. **Natural Language Query Parsing**: Search queries are parsed for category, price bounds, and sort intent using spaCy + rule-based logic.
+5. **Hybrid Retrieval and Ranking**: The Search Service combines FAISS semantic similarity with BM25 keyword matching, applies dynamic weighting, and returns ranked results through the gateway.
 
 The codebase is implemented with FastAPI services, a React + Vite frontend, and Docker Compose orchestration. It supports background indexing, category-aware boosting, and filtered/sorted query responses.
 
@@ -108,12 +110,21 @@ graph LR
 **Product Service**
 - Handles CSV uploads and product deduplication.
 - Stores products in SQLite and serves catalog/category/list APIs.
+- Optionally enriches uploaded products with LLM-generated short descriptions and search text.
 - Triggers async index rebuilds on the Search Service after catalog updates.
 
 **Search Service**
 - Parses user queries with spaCy and regex rules for filters/sort intent.
 - Uses `SentenceTransformer(all-MiniLM-L6-v2)` + FAISS for semantic retrieval.
 - Uses BM25 for lexical relevance and merges both via reciprocal-rank fusion.
+
+### Data Ingestion Pipeline
+
+1. UI uploads a CSV file through the gateway.
+2. Product Service parses rows with Pandas, validates fields, removes duplicates, and stores the catalog in SQLite.
+3. Product Service generates deterministic fallback `short_description` and `search_text` fields immediately.
+4. If `LLM_ENRICHMENT_ENABLED=true`, Product Service runs background LLM enrichment to improve `short_description` quality and refresh `search_text`.
+5. Product Service triggers Search Service indexing so FAISS and BM25 reflect the latest catalog data.
 
 ---
 
@@ -342,6 +353,60 @@ Create a root `.env` from `.env.example` and keep service configuration there.
 
 ---
 
+## Inference Benchmarks
+
+The table below summarizes the current SynapseMart inference profile for the cloud LLM path used by product enrichment and query parsing, paired with the local embedding model used for hybrid search.
+
+| Provider | LLM Model | LLM Context | Embedding Model | Embed Context | Deployment | Avg Input Tokens/Gen | Avg Output Tokens/Gen | Avg Total Tokens/Gen | P50 Latency (ms) | P95 Latency (ms) | Throughput (req/s) | Hardware |
+| -------- | --------- | ----------- | --------------- | ------------- | ---------- | -------------------- | --------------------- | -------------------- | ---------------- | ---------------- | ------------------ | -------- |
+| OpenAI (Cloud) | `gpt-4o-mini` | 128k | `all-MiniLM-L6-v2` | 256 | API (Cloud) | 174 | 72 | 246 | 2,302 | 4,512 | 0.148 | Cloud GPUs |
+
+> **Notes:**
+>
+> - These token measurements are per product generation for `short_description` and `search_text`, plus query-parser generations used for intent parsing.
+> - `gpt-4o-mini` is used for two optional LLM paths in SynapseMart: upload-time enrichment and query parsing.
+> - `all-MiniLM-L6-v2` is the local sentence-transformer model used to create semantic embeddings for hybrid search retrieval.
+> - The query parser helps improve intent parsing on top of the built-in NLP pipeline, so searches can better infer category, price bounds, and operator intent.
+> - Langfuse tracing can be enabled to observe both enrichment and query-parser calls during benchmark runs.
+
+---
+
+## Model Capabilities
+
+### GPT-4o-mini
+
+OpenAI's compact cloud model used in SynapseMart for optional product enrichment and optional query parsing.
+
+| Attribute | Details |
+| --------- | ------- |
+| **Role in SynapseMart** | Generates `short_description`, `search_text`, and structured query-parser output |
+| **Deployment** | Cloud API |
+| **Context Window** | 128,000 tokens |
+| **Structured Output** | Supported |
+| **Use in Project** | `LLM_ENRICHMENT_*` and `QUERY_PARSER_LLM_*` config paths |
+
+### all-MiniLM-L6-v2
+
+Sentence-transformers embedding model used by the search service for semantic retrieval.
+
+| Attribute | Details |
+| --------- | ------- |
+| **Role in SynapseMart** | Creates product and query embeddings for FAISS search |
+| **Architecture** | MiniLM sentence-transformer |
+| **Embedding Dimensions** | 384 |
+| **Max Sequence Length** | 256 tokens |
+| **Deployment** | Local inside `search-service` |
+| **Use in Project** | `SentenceTransformer('all-MiniLM-L6-v2')` in the hybrid search engine |
+
+### Query Parser Path
+
+SynapseMart has two query-understanding layers:
+
+- Rule-based NLP with `spaCy` (`en_core_web_sm`) for local parsing and fallback behavior.
+- Optional LLM query parser with `gpt-4o-mini` to improve intent parsing, category selection, and numeric filter extraction.
+
+---
+
 ## Technology Stack
 
 ### Backend
@@ -409,7 +474,7 @@ docker compose logs -f gateway product-service search-service ui
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under our [LICENSE](./LICENSE.md) file for details.
 
 ---
 
@@ -420,3 +485,5 @@ This project is licensed under the [MIT License](LICENSE).
 - Search ranking quality depends on uploaded data quality and query phrasing.
 - NLP interpretation of price/category/sort intent may not be perfect for every query.
 - Validate outputs before using this system in production workflows.
+
+For full disclaimer details, see [DISCLAIMER.md](./DISCLAIMER.md)

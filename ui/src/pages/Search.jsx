@@ -135,6 +135,13 @@ export const Search = () => {
   const progressPercent = jobStatus?.total_products
     ? Math.min(100, Math.round((jobStatus.processed_products / jobStatus.total_products) * 100))
     : 0;
+  const enrichmentFinished = jobStatus?.status === 'completed' || jobStatus?.status === 'completed_with_errors';
+  const enrichmentHeading = enrichmentFinished
+    ? 'Upload processing is complete.'
+    : 'Products are searchable now. Enrichment is still running.';
+  const enrichmentBody = enrichmentFinished
+    ? 'Background enrichment has finished. Search results now reflect the latest indexed product text.'
+    : `Processed ${jobStatus?.processed_products ?? 0} of ${jobStatus?.total_products ?? 0} products.`;
 
   return (
     <div className="space-y-8">
@@ -143,17 +150,10 @@ export const Search = () => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">Upload Processing</p>
-              <h2 className="mt-2 text-2xl font-bold text-gray-900">Products are searchable now. Enrichment is still running.</h2>
-              <p className="mt-2 text-gray-600">
-                Processed {jobStatus.processed_products} of {jobStatus.total_products} products.
-              </p>
-              {(jobStatus.status === 'completed' || jobStatus.status === 'completed_with_errors') && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Background enrichment has finished. Search results now reflect the latest indexed product text.
-                </p>
-              )}
+              <h2 className="mt-2 text-2xl font-bold text-gray-900">{enrichmentHeading}</h2>
+              <p className="mt-2 text-gray-600">{enrichmentBody}</p>
             </div>
-            {jobStatus.status !== 'completed' && jobStatus.status !== 'completed_with_errors' && (
+            {!enrichmentFinished && (
               <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
             )}
           </div>

@@ -10,9 +10,10 @@ export default function WorkflowSummary() {
             details: [
                 "CSV Parsing (Pandas)",
                 "SQL Persistence (SQLite)",
+                "LLM Enrichment",
                 "Indexing Trigger"
             ],
-            description: "Raw product data is cleaned, validated, and persisted for reliable storage."
+            description: "Raw product data is cleaned, validated, optionally enriched with LLM-generated short descriptions, and persisted for reliable storage."
         },
         {
             title: "Hybrid Indexing",
