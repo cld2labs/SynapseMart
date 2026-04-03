@@ -24,6 +24,8 @@ Microservices-based marketplace platform for product ingestion, catalog manageme
 - [Project Structure](#project-structure)
 - [Usage Guide](#usage-guide)
 - [Environment Variables](#environment-variables)
+- [Inference Benchmarks](#inference-benchmarks)
+- [Model Capabilities](#model-capabilities)
 - [Technology Stack](#technology-stack)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -348,6 +350,60 @@ Create a root `.env` from `.env.example` and keep service configuration there.
 **Note**:
 - In Docker, `docker-compose.yml` mounts `./.model_cache` to `/app/model_cache` for the Search Service.
 - If this cache contains incomplete model files, search startup can fail during model JSON loading.
+
+---
+
+## Inference Benchmarks
+
+The table below summarizes the current SynapseMart inference profile for the cloud LLM path used by product enrichment and query parsing, paired with the local embedding model used for hybrid search.
+
+| Provider | LLM Model | LLM Context | Embedding Model | Embed Context | Deployment | Avg Input Tokens/Gen | Avg Output Tokens/Gen | Avg Total Tokens/Gen | P50 Latency (ms) | P95 Latency (ms) | Throughput (req/s) | Hardware |
+| -------- | --------- | ----------- | --------------- | ------------- | ---------- | -------------------- | --------------------- | -------------------- | ---------------- | ---------------- | ------------------ | -------- |
+| OpenAI (Cloud) | `gpt-4o-mini` | 128k | `all-MiniLM-L6-v2` | 256 | API (Cloud) | 174 | 72 | 246 | 2,302 | 4,512 | 0.148 | Cloud GPUs |
+
+> **Notes:**
+>
+> - These token measurements are per product generation for `short_description` and `search_text`, plus query-parser generations used for intent parsing.
+> - `gpt-4o-mini` is used for two optional LLM paths in SynapseMart: upload-time enrichment and query parsing.
+> - `all-MiniLM-L6-v2` is the local sentence-transformer model used to create semantic embeddings for hybrid search retrieval.
+> - The query parser helps improve intent parsing on top of the built-in NLP pipeline, so searches can better infer category, price bounds, and operator intent.
+> - Langfuse tracing can be enabled to observe both enrichment and query-parser calls during benchmark runs.
+
+---
+
+## Model Capabilities
+
+### GPT-4o-mini
+
+OpenAI's compact cloud model used in SynapseMart for optional product enrichment and optional query parsing.
+
+| Attribute | Details |
+| --------- | ------- |
+| **Role in SynapseMart** | Generates `short_description`, `search_text`, and structured query-parser output |
+| **Deployment** | Cloud API |
+| **Context Window** | 128,000 tokens |
+| **Structured Output** | Supported |
+| **Use in Project** | `LLM_ENRICHMENT_*` and `QUERY_PARSER_LLM_*` config paths |
+
+### all-MiniLM-L6-v2
+
+Sentence-transformers embedding model used by the search service for semantic retrieval.
+
+| Attribute | Details |
+| --------- | ------- |
+| **Role in SynapseMart** | Creates product and query embeddings for FAISS search |
+| **Architecture** | MiniLM sentence-transformer |
+| **Embedding Dimensions** | 384 |
+| **Max Sequence Length** | 256 tokens |
+| **Deployment** | Local inside `search-service` |
+| **Use in Project** | `SentenceTransformer('all-MiniLM-L6-v2')` in the hybrid search engine |
+
+### Query Parser Path
+
+SynapseMart has two query-understanding layers:
+
+- Rule-based NLP with `spaCy` (`en_core_web_sm`) for local parsing and fallback behavior.
+- Optional LLM query parser with `gpt-4o-mini` to improve intent parsing, category selection, and numeric filter extraction.
 
 ---
 
