@@ -24,7 +24,7 @@ Microservices-based marketplace platform for product ingestion, catalog manageme
 - [Project Structure](#project-structure)
 - [Usage Guide](#usage-guide)
 - [Environment Variables](#environment-variables)
-- [Inference Benchmarks](#inference-benchmarks)
+- [Inference Metrics](#inference-metrics)
 - [Model Capabilities](#model-capabilities)
 - [Technology Stack](#technology-stack)
 - [Troubleshooting](#troubleshooting)
@@ -353,7 +353,7 @@ Create a root `.env` from `.env.example` and keep service configuration there.
 
 ---
 
-## Inference Benchmarks
+## Inference Metrics
 
 The table below summarizes the current SynapseMart inference profile for the cloud LLM path used by product enrichment and query parsing, paired with the local embedding model used for hybrid search.
 
